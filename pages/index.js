@@ -1,8 +1,24 @@
+import React, { useState } from 'react';
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
+import MySocket from '../src/MySocket';
 
 export default function Home() {
+  const [name, setName] = useState()
+  const router = useRouter()
+  const socketInstance = MySocket.getInstance()
+  const socket = socketInstance.socket;
+
+  const joinGame = () => {
+    if (name) {
+      socket.emit('join', { name: name })
+      router.push(`/waiting_player`)
+    }
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -11,58 +27,34 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+      <main className={[styles.main, "relative flex min-h-screen flex-col justify-center bg-gradient-to-r from-rose-100 to-teal-100"]}>
+        <div className="flex items-center justify-center h-screen">
+          <div className="bg-white rounded-2xl border shadow-x1 p-10 max-w-lg">
+            <div className="flex flex-col items-center space-y-4">
+              <h1 className="font-bold text-2xl text-gray-700 w-4/6 text-center">
+                Welcome to Real Time Conversation Card Game
+              </h1>
+              <p className="text-sm text-gray-500 text-center w-5/6">
+                Hello, please enter your name.
+              </p>
+              <input
+                type="text"
+                placeholder="Name"
+                className="border-2 rounded-lg w-full h-12 px-4"
+                onChange={(e) => setName(e.target.value)}
+              />
+              <button
+                className="bg-red-400 text-white rounded-md hover:bg-red-500 font-semibold px-4 py-3 w-full"
+                onClick={joinGame}
+              >
+                Join Game
+              </button>
+            </div>
+          </div>
         </div>
       </main>
 
       <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
       </footer>
     </div>
   )
