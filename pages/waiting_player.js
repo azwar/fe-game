@@ -5,18 +5,20 @@ import styles from '../styles/Home.module.css'
 import { useRouter } from 'next/router';
 import { Socket } from 'socket.io-client';
 import MySocket from '../src/MySocket';
+import { useSelector, useDispatch } from 'react-redux'
+import { setQuestion } from '../src/state/game-slice'
 
 export default function Home() {
   const router = useRouter()
   const socketInstance = MySocket.getInstance()
   const socket = socketInstance.socket;
   const [joined, setJoined] = useState(0)
-  
+  const dispatch = useDispatch()
+
   useEffect(() => {
     socket.emit('check-room', replay => {
       console.log('replay', replay)
     })
-    // fetch('http://localhost:3000/count-joined').then(response => console.log(response))
   }, [])
 
   useEffect(() => {
@@ -42,6 +44,11 @@ export default function Home() {
     socket.on("start-play", (data) => {
       console.log('start-play: ')
       router.push('/play')
+    });
+
+    socket.on("turn", (data) => {
+      console.log('turn play: ', data)
+      dispatch(setQuestion(data))
     });
 
   }, [socket])

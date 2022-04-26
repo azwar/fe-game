@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux'
 
 import Head from 'next/head'
 import Image from 'next/image'
@@ -8,8 +9,13 @@ import MySocket from '../src/MySocket';
 
 export default function Home() {
   const [players, setPlayers] = useState([])
+  const [questions, setQuestions] = useState([])
+  const [nextBtnVisible, setNextBtnVisible] = useState(false)
+  const [shuffleBtnVisible, setShuffleBtnVisible] = useState(true)
+
   const socketInstance = MySocket.getInstance()
   const socket = socketInstance.socket;
+  const questionStore = useSelector((state) => state.gameReducer.questions) || []
 
   useEffect(() => {
     socket.emit('list-players', replay => {
@@ -21,7 +27,7 @@ export default function Home() {
     socket.on("packet", ({ type, data }) => {
       console.log('packet: ', type, data)
     });
-  
+
     socket.on("listed-players", (data) => {
       console.log('listed-players: ', data)
       setPlayers(data)
@@ -32,7 +38,54 @@ export default function Home() {
       router.push('/play')
     });
 
+    socket.on("turn", (data) => {
+      console.log('turn play: ', data)
+      console.log('turn play data length: ')
+      console.log(data.length)
+
+      setQuestions(data)
+
+      if (data.length === 0) {
+        setShuffleBtnVisible(false)
+      }
+    });
+
+    socket.on("question-selected", (data) => {
+      console.log('question-selected: ', data)
+      setQuestions([data.question])
+      setShuffleBtnVisible(false)
+      setNextBtnVisible(true)
+      // selectQuestion(data.question)
+    });
   }, [socket])
+
+  useEffect(() => {
+    setQuestions([...questionStore])
+  }, [questionStore])
+
+  function selectQuestion(question) {
+    const tmpArr = []
+    for (let index = 0; index < questionStore.length; index++) {
+      const item = questionStore[index];
+
+      if (item === question) {
+        tmpArr.push(question)
+      }
+    }
+
+    setQuestions(tmpArr)
+    socket.emit('select-question', { question: question })
+    setShuffleBtnVisible(false)
+    setNextBtnVisible(true)
+  }
+
+  function nextTurn() {
+    socket.emit('next-turn')
+  }
+
+  function shuffle() {
+    socket.emit('shuffle')
+  }
 
   return (
     <div className={styles.container}>
@@ -47,25 +100,42 @@ export default function Home() {
           <div className="flex text-xl font-bold">Players:</div>
           <div className="flex flex-1 pl-8 mt-4">
             <ol className='text-lg'>
-              { players.map((item, index) => {
+              {players.map((item, index) => {
                 return <li key={index}>{item.name}</li>
               })}
             </ol>
           </div>
           <div className="flex flex-row space-x-4 my-4 h-80">
-            <Card question={"Where is your favorite place on earh"} />
-            <Card question={"What is your plan for next vacation"} />
-            <Card question={"What it the most important thing in your life so far"}/>
+            {questions.map((item, index) => {
+              return <Card question={item} key={index} onClick={() => selectQuestion(item)} />
+            })
+            }
           </div>
           <div className="flex flex-row space-x-4 my-4 justify-center">
             Click to Draw a Card
           </div>
           <div className="flex flex-row space-x-4 my-4">
-            <button
-              className="bg-red-400 text-white rounded-md hover:bg-red-500 font-semibold px-4 py-3"
-            >
-              Shuffle
-            </button>
+            {shuffleBtnVisible ? (
+              <button
+                onClick={() => shuffle()}
+                className="bg-red-400 text-white rounded-md hover:bg-red-500 font-semibold px-4 py-3"
+              >
+                Shuffle
+              </button>
+            ) : (
+              <div></div>
+            )}
+
+            {nextBtnVisible ? (
+              <button
+                onClick={() => nextTurn()}
+                className="bg-red-400 text-white rounded-md hover:bg-red-500 font-semibold px-4 py-3"
+              >
+                Next Turn
+              </button>
+            ) : (
+              <div></div>
+            )}
           </div>
         </div>
 
